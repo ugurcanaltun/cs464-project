@@ -57,8 +57,8 @@ car_images_flat, car_labels_flat = load_images_from_folder(cars_folder, True)
 all_images_flat = np.vstack((bike_images_flat, car_images_flat))
 all_labels_flat = np.array(bike_labels_flat + car_labels_flat)
 
-print(all_images.shape)
-print(all_images_flat.shape)
+#print(all_images.shape)
+#print(all_images_flat.shape)
 
 # Perform train-test split
 X_train, X_test, y_train, y_test = train_test_split(all_images, all_labels, test_size=0.2, random_state=44)
@@ -77,12 +77,12 @@ y_train = lb.fit_transform(y_train)
 y_val = lb.fit_transform(y_val)
 y_test = lb.fit_transform(y_test)
 
-print(all_images.shape)
-print(all_images_flat.shape)
-print()
-print(X_train.shape)
-print(X_test.shape)
-print(X_val.shape)
+#print(all_images.shape)
+#print(all_images_flat.shape)
+#print()
+#print(X_train.shape)
+#print(X_test.shape)
+#print(X_val.shape)
 
 # Function for image augmentation using imgaug
 def apply_image_augmentation(images, labels):
@@ -171,7 +171,7 @@ for c_value in c_values:
     accuracy_aug = accuracy_score(y_val, y_pred)
     svm_aug_accuracies.append(accuracy_aug)
     
-    # Best model for SVM
+# Best model for SVM
 svm_best_param = c_values[np.argmax(svm_accuracies)]
 best_svm = SVC(kernel=kernel, gamma=svm_best_param)
 best_svm.fit(X_train_flat, y_train)
@@ -281,25 +281,42 @@ for components in n_components:
     X_val_flat_pca.append(pca.transform(X_val_flat))
 
 # Augmentation
+knn_aug_pca_accuracies = []
+knn_nonaug_pca_accuracies = []
 
 for i in range(len(n_components)):
     knn = KNeighborsClassifier(n_neighbors=knn_best_param)
     knn.fit(X_train_flat_pca[i], y_train)
     accuracy = knn.score(X_val_flat_pca[i], y_val)
+    knn_nonaug_pca_accuracies.append(accuracy)
     print("Accuracy:", accuracy)
     
 for i in range(len(n_components)):
     knn_aug = KNeighborsClassifier(n_neighbors=knn_aug_best_param)
     knn_aug.fit(X_train_flat_pca[i], y_train)
-
     accuracy = knn_aug.score(X_val_flat_pca[i], y_val)
+    knn_aug_pca_accuracies.append(accuracy)
     print("Accuracy:", accuracy)
     
+plt.figure(figsize=(10, 6))
+plt.plot(n_components, knn_aug_pca_accuracies, marker="o", label="Augmented")
+plt.plot(n_components, knn_nonaug_pca_accuracies, marker="o", label="Non-Augmented")
+plt.xlabel("n_components")
+plt.ylabel("Accuracy")
+plt.title("n_components vs Accuracy (KNN)")
+plt.xticks(n_components)
+plt.grid(True)
+plt.legend()
+plt.show()
+    
+svm_aug_pca_accuracies = []
+svm_nonaug_pca_accuracies = []
 for i in range(len(n_components)):
     svm = SVC(kernel="poly") # TODO
     svm.fit(X_train_flat_pca[i], y_train)
     y_pred = svm.predict(X_val_flat_pca[i])
     accuracy = accuracy_score(y_val, y_pred)
+    svm_nonaug_pca_accuracies.append(accuracy)
     print(accuracy)
     
 for i in range(len(n_components)):
@@ -307,13 +324,28 @@ for i in range(len(n_components)):
     svm_aug.fit(X_train_flat_pca[i], y_train)
     y_pred = svm_aug.predict(X_val_flat_pca[i])
     accuracy = accuracy_score(y_val, y_pred)
+    svm_aug_pca_accuracies.append(accuracy)
     print(accuracy)
     
+plt.figure(figsize=(10, 6))
+plt.plot(n_components, svm_aug_pca_accuracies, marker="o", label="Augmented")
+plt.plot(n_components, svm_nonaug_pca_accuracies, marker="o", label="Non-Augmented")
+plt.xlabel("n_components")
+plt.ylabel("Accuracy")
+plt.title("n_components vs Accuracy (SVM)")
+plt.xticks(n_components)
+plt.grid(True)
+plt.legend()
+plt.show()
+
+rf_aug_pca_accuracies = []
+rf_nonaug_pca_accuracies = []
 for i in range(len(n_components)):
     rf = RandomForestClassifier(random_state=42, n_estimators=rf_best_param)
     rf.fit(X_train_flat_pca[i], y_train)
     y_pred = rf.predict(X_val_flat_pca[i])
     accuracy = accuracy_score(y_val, y_pred)
+    rf_nonaug_pca_accuracies.append(accuracy)
     print(accuracy)
     
 for i in range(len(n_components)):
@@ -321,4 +353,16 @@ for i in range(len(n_components)):
     rf_aug.fit(X_train_flat_pca[i], y_train)
     y_pred = rf_aug.predict(X_val_flat_pca[i])
     accuracy = accuracy_score(y_val, y_pred)
+    rf_aug_pca_accuracies.append(accuracy)
     print(accuracy)
+    
+plt.figure(figsize=(10, 6))
+plt.plot(n_components, rf_aug_pca_accuracies, marker="o", label="Augmented")
+plt.plot(n_components, rf_nonaug_pca_accuracies, marker="o", label="Non-Augmented")
+plt.xlabel("n_components")
+plt.ylabel("Accuracy")
+plt.title("n_components vs Accuracy (Random Forest)")
+plt.xticks(n_components)
+plt.grid(True)
+plt.legend()
+plt.show()
